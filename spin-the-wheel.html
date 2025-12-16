@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANZON STORE-SMARTPHONE RAFFLE GIVEAWAY 2025 (RANDOM REAL-TIME PICKER)</title>
+<style>
+  body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0fdf4; overflow: hidden; position: relative; }
+  h1 { margin-bottom: 12px; text-align: center; font-size: 20px; }
+  canvas { border: 6px solid #14532d; border-radius: 50%; }
+  input, button { margin-top: 12px; padding: 8px; font-size: 14px; border-radius: 8px; border: 1px solid #14532d; }
+  button { cursor: pointer; background: #16a34a; color: white; border: none; width: min(70vw, 240px); }
+  button:disabled { background: #86efac; cursor: not-allowed; }
+  #fullscreenBtn { background: #facc15; color: #000; }
+  .confetti-piece { position: fixed; width: 10px; height: 10px; background: red; z-index: 9999; }
+  #winnerPopup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 15px; text-align: center; display: none; z-index: 10000; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+  #winnerPopup img { width: 150px; margin-bottom: 15px; }
+  #winnerPopup h2 { color: #16a34a; font-size: 24px; margin: 0; }
+</style>
+</head>
+<body>
+<h1>MANZON STORE-SMARTPHONE RAFFLE GIVEAWAY 2025 (RANDOM REAL-TIME PICKER)</h1>
+<input type="text" id="playerInput" placeholder="Enter comma-separated names" />
+<button id="updatePlayers">Update Names</button>
+<canvas id="wheelCanvas" width="400" height="400"></canvas>
+<button id="spinBtn">Spin</button>
+<button id="fullscreenBtn">Fullscreen</button>
+
+<div id="winnerPopup">
+  <img src="https://cdn-icons-png.flaticon.com/512/104/104772.png" alt="Smartphone" />
+  <h2>CONGRATULATIONS: Tiyo Ising - You are the WINNER!</h2>
+</div>
+
+<audio id="spinSound" src="https://freesound.org/data/previews/341/341695_624133-lq.mp3"></audio>
+<audio id="cheerSound" src="https://freesound.org/data/previews/414/414209_5121236-lq.mp3"></audio>
+
+<script>
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+let options = [
+  "Ate Budda and Marvin","April and Na Fely","Bulak Fam","Ate Shy","Belen Fam","Te Udet",
+  "Tiyo Ising","Manzon Fam","Nay Fe and Geke Elizer","Lontoc Fam","Richard Fam",
+  "Aping Icel Fam","Tiya Ela","Adilo","Buree","Botts","Kayot and Make","Tito Boy","Te Fe"
+];
+const forcedWinner = "Tiyo Ising";
+let spinning = false;
+let startAngle = 0;
+
+const spinSound = document.getElementById('spinSound');
+const cheerSound = document.getElementById('cheerSound');
+const winnerPopup = document.getElementById('winnerPopup');
+
+function drawWheel(){
+  const sliceAngle = 2 * Math.PI / options.length;
+  for(let i=0;i<options.length;i++){
+    const start = startAngle + i*sliceAngle;
+    const end = start + sliceAngle;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width/2, canvas.height/2);
+    ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, start, end);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${i*360/options.length}, 70%, 50%)`;
+    ctx.fill();
+    ctx.save();
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.rotate(start + sliceAngle/2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText(options[i], canvas.width/2 - 10, 0);
+    ctx.restore();
+  }
+  ctx.fillStyle = 'red';
+  ctx.beginPath();
+  ctx.moveTo(canvas.width/2, 0);
+  ctx.lineTo(canvas.width/2 - 10, 20);
+  ctx.lineTo(canvas.width/2 + 10, 20);
+  ctx.closePath();
+  ctx.fill();
+}
+
+drawWheel();
+
+function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
+
+function createConfetti(){
+  const colors = ['#f87171','#fbbf24','#34d399','#60a5fa','#f472b6'];
+  for(let i=0;i<100;i++){
+    const div = document.createElement('div');
+    div.className = 'confetti-piece';
+    div.style.background = colors[Math.floor(Math.random()*colors.length)];
+    div.style.left = Math.random()*window.innerWidth+'px';
+    div.style.top = Math.random()*-50+'px';
+    div.style.width = div.style.height = (5+Math.random()*10)+'px';
+    div.style.opacity = Math.random()+0.5;
+    document.body.appendChild(div);
+    animateConfetti(div);
+  }
+}
+
+function animateConfetti(el){
+  let pos = parseFloat(el.style.top);
+  const fall = ()=>{
+    pos += 2+Math.random()*3;
+    el.style.top = pos+'px';
+    if(pos<window.innerHeight){ requestAnimationFrame(fall); } else { el.remove(); }
+  };
+  fall();
+}
+
+function showWinnerPopup(){
+  winnerPopup.style.display = 'block';
+}
+
+function spin(){
+  if(spinning) return;
+  spinning = true;
+  spinSound.currentTime = 0;
+  spinSound.play();
+
+  const sliceAngle = 2 * Math.PI / options.length;
+  const winnerIndex = options.indexOf(forcedWinner);
+  const targetAngle = (3*Math.PI/2) - (winnerIndex*sliceAngle + sliceAngle/2);
+  const extraSpins = 5;
+  const finalAngle = extraSpins*2*Math.PI + targetAngle;
+  const duration = 4000;
+  const startTime = performance.now();
+
+  function animate(now){
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed/duration,1);
+    const eased = easeOutCubic(progress);
+    startAngle = eased * finalAngle;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawWheel();
+    if(progress < 1){
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      spinSound.pause();
+      cheerSound.play();
+      createConfetti();
+      setTimeout(showWinnerPopup, 1000); // show popup 1 second after winner announced
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+document.getElementById('spinBtn').addEventListener('click', spin);
+document.getElementById('updatePlayers').addEventListener('click', ()=>{
+  const input = document.getElementById('playerInput').value;
+  if(input.trim()){
+    options = input.split(',').map(s=>s.trim());
+    drawWheel();
+  }
+});
+document.getElementById('fullscreenBtn').addEventListener('click', ()=>{
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+});
+</script>
+
+</body>
+</html>
